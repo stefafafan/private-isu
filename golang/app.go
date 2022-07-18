@@ -28,8 +28,9 @@ import (
 )
 
 var (
-	db    *sqlx.DB
-	store *gsm.MemcacheStore
+	db        *sqlx.DB
+	store     *gsm.MemcacheStore
+	templates *template.Template
 )
 
 const (
@@ -76,6 +77,9 @@ func init() {
 	}
 	memcacheClient := memcache.New(memdAddr)
 	store = gsm.NewMemcacheStore(memcacheClient, "iscogram_", []byte("sendagaya"))
+
+	fmap := template.FuncMap{}
+	templates = template.Must(template.New("").Funcs(fmap).ParseFiles("templates/banned.html", "templates/index.html", "templates/layout.html", "templates/login.html", "templates/post_id.html", "templates/post.html", "templates/posts.html", "templates/register.html", "templates/user.html"))
 }
 
 func dbInitialize() {
@@ -297,10 +301,7 @@ func getLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	template.Must(template.ParseFiles(
-		getTemplPath("layout.html"),
-		getTemplPath("login.html")),
-	).Execute(w, struct {
+	templates.ExecuteTemplate(w, "login.html", struct {
 		Me    User
 		Flash string
 	}{me, getFlash(w, r, "notice")})

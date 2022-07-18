@@ -200,6 +200,26 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 		postIdToComments[v.PostID] = curComments
 	}
 
+	// commentIdsだけの配列
+	userIds := make([]int, len(postComments))
+	for _, v := range postComments {
+		userIds = append(userIds, v.UserID)
+	}
+	// commentごとのuser取得
+	sql2, params2, err := sqlx.In("SELECT * FROM `users` WHERE `id` IN (?)", userIds)
+	if err != nil {
+		return nil, err
+	}
+	var commentUsers []User
+	if err := db.Select(&commentUsers, sql2, params2...); err != nil {
+		return nil, err
+	}
+	// userIdごとのuser
+	userIdToUser := map[int]User{}
+	for _, v := range commentUsers {
+		userIdToUser[v.ID] = v
+	}
+
 	for _, p := range results {
 		comments := postIdToComments[p.ID]
 		p.CommentCount = len(comments)
@@ -208,10 +228,7 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 		}
 
 		for i := 0; i < len(comments); i++ {
-			err := db.Get(&comments[i].User, "SELECT * FROM `users` WHERE `id` = ?", comments[i].UserID)
-			if err != nil {
-				return nil, err
-			}
+			comments[i].User = userIdToUser[comments[i].UserID]
 		}
 
 		// reverse

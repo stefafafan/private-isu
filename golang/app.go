@@ -882,7 +882,7 @@ func main() {
 	}
 	log.Print("DB ready!")
 
-	maxOpenConns := 10
+	maxOpenConns := 30
 	db.SetMaxOpenConns(maxOpenConns)
 	db.SetMaxIdleConns(maxOpenConns)
 	db.SetConnMaxLifetime(time.Second * time.Duration(maxOpenConns))

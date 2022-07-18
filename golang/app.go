@@ -832,6 +832,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to DB: %s.", err.Error())
 	}
+	maxOpenConns := 25 // TODO: あとで調整する
+	db.SetMaxOpenConns(maxOpenConns)
+	db.SetMaxIdleConns(maxOpenConns)
+	db.SetConnMaxLifetime(time.Second * time.Duration(maxOpenConns))
+	db.SetConnMaxIdleTime(time.Second * time.Duration(maxOpenConns))
 	defer db.Close()
 
 	r := chi.NewRouter()

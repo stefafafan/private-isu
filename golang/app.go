@@ -839,6 +839,17 @@ func main() {
 	db.SetConnMaxIdleTime(time.Second * time.Duration(maxOpenConns))
 	defer db.Close()
 
+	// 再起動試験対策
+	for {
+		err := db.Ping()
+		if err == nil {
+			break
+		}
+		log.Print(err)
+		time.Sleep(time.Second * 2)
+	}
+	log.Print("DB ready!")
+
 	r := chi.NewRouter()
 	r.Mount("/debug", middleware.Profiler())
 

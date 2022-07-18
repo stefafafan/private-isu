@@ -205,19 +205,21 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 	for _, v := range postComments {
 		userIds = append(userIds, v.UserID)
 	}
-	// commentごとのuser取得
-	sql2, params2, err := sqlx.In("SELECT * FROM `users` WHERE `id` IN (?)", userIds)
-	if err != nil {
-		return nil, err
-	}
-	var commentUsers []User
-	if err := db.Select(&commentUsers, sql2, params2...); err != nil {
-		return nil, err
-	}
 	// userIdごとのuser
 	userIdToUser := map[int]User{}
-	for _, v := range commentUsers {
-		userIdToUser[v.ID] = v
+	if len(userIds) > 0 {
+		// commentごとのuser取得
+		sql2, params2, err := sqlx.In("SELECT * FROM `users` WHERE `id` IN (?)", userIds)
+		if err != nil {
+			return nil, err
+		}
+		var commentUsers []User
+		if err := db.Select(&commentUsers, sql2, params2...); err != nil {
+			return nil, err
+		}
+		for _, v := range commentUsers {
+			userIdToUser[v.ID] = v
+		}
 	}
 
 	for _, p := range results {

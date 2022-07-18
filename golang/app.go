@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -907,5 +908,16 @@ func main() {
 		http.FileServer(http.Dir("../public")).ServeHTTP(w, r)
 	})
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	socket_file := "/tmp/go.sock"
+	os.Remove(socket_file)
+	l, err := net.Listen("unix", socket_file)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = os.Chmod(socket_file, 0777)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Fatal(http.Serve(l, r))
 }

@@ -332,16 +332,18 @@ func postLogin(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+var registerTemplate *template.Template = template.Must(template.ParseFiles(
+	getTemplPath("layout.html"),
+	getTemplPath("register.html")),
+)
+
 func getRegister(w http.ResponseWriter, r *http.Request) {
 	if isLogin(getSessionUser(r)) {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
 
-	template.Must(template.ParseFiles(
-		getTemplPath("layout.html"),
-		getTemplPath("register.html")),
-	).Execute(w, struct {
+	registerTemplate.Execute(w, struct {
 		Me    User
 		Flash string
 	}{User{}, getFlash(w, r, "notice")})
@@ -773,6 +775,11 @@ func postComment(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/posts/%d", postID), http.StatusFound)
 }
 
+var bannedTemplate *template.Template = template.Must(template.ParseFiles(
+	getTemplPath("layout.html"),
+	getTemplPath("banned.html")),
+)
+
 func getAdminBanned(w http.ResponseWriter, r *http.Request) {
 	me := getSessionUser(r)
 	if !isLogin(me) {
@@ -792,10 +799,7 @@ func getAdminBanned(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	template.Must(template.ParseFiles(
-		getTemplPath("layout.html"),
-		getTemplPath("banned.html")),
-	).Execute(w, struct {
+	bannedTemplate.Execute(w, struct {
 		Users     []User
 		Me        User
 		CSRFToken string

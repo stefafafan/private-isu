@@ -178,8 +178,10 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 
 	// postIdsだけの配列
 	postIds := make([]int, len(results))
+	postUserIds := make([]int, len(results))
 	for _, v := range results {
 		postIds = append(postIds, v.ID)
+		postUserIds = append(postUserIds, v.UserID)
 	}
 
 	// 全postのコメント一覧取得しておく
@@ -200,24 +202,25 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 		postIdToComments[v.PostID] = curComments
 	}
 
-	// commentIdsだけの配列
-	userIds := make([]int, len(postComments))
+	// userIdsだけの配列
+	userIds := make([]int, len(postComments)+len(postUserIds))
 	for _, v := range postComments {
 		userIds = append(userIds, v.UserID)
 	}
+	userIds = append(userIds, postUserIds...)
 	// userIdごとのuser
 	userIdToUser := map[int]User{}
 	if len(userIds) > 0 {
-		// commentごとのuser取得
+		// user取得
 		sql2, params2, err := sqlx.In("SELECT * FROM `users` WHERE `id` IN (?)", userIds)
 		if err != nil {
 			return nil, err
 		}
-		var commentUsers []User
-		if err := db.Select(&commentUsers, sql2, params2...); err != nil {
+		var usrs []User
+		if err := db.Select(&usrs, sql2, params2...); err != nil {
 			return nil, err
 		}
-		for _, v := range commentUsers {
+		for _, v := range usrs {
 			userIdToUser[v.ID] = v
 		}
 	}
@@ -239,12 +242,7 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 		}
 
 		p.Comments = comments
-
-		err = db.Get(&p.User, "SELECT * FROM `users` WHERE `id` = ?", p.UserID)
-		if err != nil {
-			return nil, err
-		}
-
+		p.User = userIdToUser[p.UserID]
 		p.CSRFToken = csrfToken
 
 		posts = append(posts, p)

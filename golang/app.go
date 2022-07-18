@@ -193,7 +193,7 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 	}
 
 	// postIdごとのcomments
-	var postIdToComments map[int][]Comment
+	postIdToComments := map[int][]Comment{}
 	for _, v := range postComments {
 		curComments := postIdToComments[v.PostID]
 		curComments = append(curComments, v)

@@ -880,7 +880,7 @@ func main() {
 	}
 	log.Print("DB ready!")
 
-	maxOpenConns := 25 // TODO: あとで調整する
+	maxOpenConns := 10
 	db.SetMaxOpenConns(maxOpenConns)
 	db.SetMaxIdleConns(maxOpenConns)
 	db.SetConnMaxLifetime(time.Second * time.Duration(maxOpenConns))

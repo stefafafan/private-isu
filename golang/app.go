@@ -176,20 +176,35 @@ func getFlash(w http.ResponseWriter, r *http.Request, key string) string {
 func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, error) {
 	var posts []Post
 
-	for _, p := range results {
-		err := db.Get(&p.CommentCount, "SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?", p.ID)
-		if err != nil {
-			return nil, err
-		}
+	// postIdsだけの配列
+	postIds := make([]int, len(results))
+	for _, v := range results {
+		postIds = append(postIds, v.ID)
+	}
 
-		query := "SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC"
-		if !allComments {
-			query += " LIMIT 3"
-		}
-		var comments []Comment
-		err = db.Select(&comments, query, p.ID)
-		if err != nil {
-			return nil, err
+	// 全postのコメント一覧取得しておく
+	sql, params, err := sqlx.In("SELECT * FROM `comments` WHERE `post_id` IN (?) ORDER BY `created_at` DESC ", postIds)
+	if err != nil {
+		return nil, err
+	}
+	var postComments []Comment
+	if err := db.Select(&postComments, sql, params...); err != nil {
+		return nil, err
+	}
+
+	// postIdごとのcomments
+	var postIdToComments map[int][]Comment
+	for _, v := range postComments {
+		curComments := postIdToComments[v.PostID]
+		curComments = append(curComments, v)
+		postIdToComments[v.PostID] = curComments
+	}
+
+	for _, p := range results {
+		comments := postIdToComments[p.ID]
+		p.CommentCount = len(comments)
+		if !allComments && len(comments) > 3 {
+			comments = comments[:3]
 		}
 
 		for i := 0; i < len(comments); i++ {
@@ -213,12 +228,7 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 
 		p.CSRFToken = csrfToken
 
-		if p.User.DelFlg == 0 {
-			posts = append(posts, p)
-		}
-		if len(posts) >= postsPerPage {
-			break
-		}
+		posts = append(posts, p)
 	}
 
 	return posts, nil

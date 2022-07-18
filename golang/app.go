@@ -703,7 +703,7 @@ func getImage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// ファイルに書き出す
-		filename := "public/img/" + pidStr + "." + ext
+		filename := "../public/img/" + pidStr + "." + ext
 		err = ioutil.WriteFile(filename, post.Imgdata, 0666)
 		os.Chmod(filename, 0666)
 		if err != nil {

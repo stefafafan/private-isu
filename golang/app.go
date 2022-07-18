@@ -820,7 +820,7 @@ func main() {
 	}
 
 	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true&loc=Local",
+		"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true&loc=Local&interpolateParams=true",
 		user,
 		password,
 		host,
@@ -833,6 +833,23 @@ func main() {
 		log.Fatalf("Failed to connect to DB: %s.", err.Error())
 	}
 	defer db.Close()
+
+	// 再起動試験対策
+	for {
+		err := db.Ping()
+		if err == nil {
+			break
+		}
+		log.Print(err)
+		time.Sleep(time.Second * 2)
+	}
+	log.Print("DB ready!")
+
+	maxOpenConns := 25 // TODO: あとで調整する
+	db.SetMaxOpenConns(maxOpenConns)
+	db.SetMaxIdleConns(maxOpenConns)
+	db.SetConnMaxLifetime(time.Second * time.Duration(maxOpenConns))
+	db.SetConnMaxIdleTime(time.Second * time.Duration(maxOpenConns))
 
 	r := chi.NewRouter()
 	r.Mount("/debug", middleware.Profiler())
